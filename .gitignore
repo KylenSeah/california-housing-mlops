@@ -1,0 +1,103 @@
+# ===================================================================
+# 1. Core Python & System Junk
+# ===================================================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS-generated files (Mac/Windows)
+.DS_Store
+Thumbs.db
+
+# Distribution / Packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ===================================================================
+# 2. Data & Large Files
+# (Data should be fetched via scripts/DVC, not stored in Git)
+# ===================================================================
+data/*
+raw_data/*
+processed_data/*
+
+# Allow the folders themselves to be tracked via .gitkeep
+!data/.gitkeep
+!raw_data/.gitkeep
+!processed_data/.gitkeep
+
+# Safety net for loose data files
+*.csv
+*.parquet
+*.pkl
+*.pickle
+*.zip
+*.tgz
+*.tar.gz
+*.db
+*.sqlite
+*.sqlite3
+
+# ===================================================================
+# 3. Environments & Secrets (CRITICAL SECURITY)
+# ===================================================================
+# Secrets - NEVER COMMIT THESE
+.env
+.env.local
+.secrets
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ===================================================================
+# 4. MLOps & Experiment Tracking
+# ===================================================================
+# MLflow artifacts and local database
+mlruns/
+mlartifacts/
+.trash/
+
+# Project specific artifact outputs
+artifacts/
+models/
+metrics/
+
+# Pytest and Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+
+# ===================================================================
+# 5. IDE & Editor Configuration
+# ===================================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+.project
+.settings/
