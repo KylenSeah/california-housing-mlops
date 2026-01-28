@@ -79,9 +79,9 @@ mlartifacts/
 .trash/
 
 # Project specific artifact outputs
-artifacts/
-models/
-metrics/
+/artifacts/
+/models/
+/metrics/
 
 # Pytest and Coverage
 .pytest_cache/
