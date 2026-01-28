@@ -1,0 +1,130 @@
+# ==============================================================================
+# CALIFORNIA HOUSING PIPELINE CONFIGURATION
+# ==============================================================================
+# This file controls the behavior of the training and prediction pipelines.
+# It is validated strictly against schemas in `src/california_housing/core/config_definitions.py`.
+# ==============================================================================
+
+globals:
+  target_col: "median_house_value"
+  random_state: 42
+  artifacts:
+    root_dir: "artifacts"
+    model_dir: "models"
+    metrics_dir: "metrics"
+  mlflow:
+    experiment_name: "California Housing - test"
+    registered_model_prefix: "california_housing"
+
+data_ingestion:
+  type: "sqlite"
+  db_path: "data/raw/housing.db"
+  table_name: "housing"
+
+data_preparation:
+  preprocessing:
+    # Stratification Logic: Ensures train/test split preserves income distribution
+    new_stratify_col: "income_cat"
+    stratify_on_col: "median_income"
+    stratify_bins: [0.0, 1.5, 3.0, 4.5, 6.0, .inf]
+    stratify_labels: [1, 2, 3, 4, 5]
+    min_stratify_samples: 3
+  split:
+    test_size: 0.2
+
+model_trainer:
+  # ---------------------------------------------------------------------------
+  # Validation Strategy
+  # Options: "single_split" (Fast) OR "cross_validation" (Robust)
+  # ---------------------------------------------------------------------------
+  validation_strategy: "single_split"
+
+  single_split_config:
+    val_size: 0.25  # 25% of training data used for validation
+
+  cross_validation_config:
+    n_folds: 5      # Standard K-Fold
+
+  evaluation:
+    metrics: ["rmse", "mae", "r2", "mse"] 
+    metrics_filename: "{model_name}_metrics.json"
+
+  preprocessing:
+    # Feature Engineering
+    ratio_cols:
+      bedroom_ratio: ["total_bedrooms", "total_rooms"]
+      rooms_per_house: ["total_rooms", "households"]
+      people_per_house: ["population", "households"]
+    log_cols:
+      - "total_bedrooms"
+      - "total_rooms"
+      - "population"
+      - "households"
+      - "median_income"
+    geo_cols:
+      - "longitude"
+      - "latitude"
+
+    # Geographic Clustering (KMeans)
+    n_clusters: 10
+    gamma: 1.0
+
+    # Imputation Strategies
+    imputer_strategy_num: "median"        # Options: mean, median, most_frequent
+    imputer_strategy_cat: "most_frequent" # Options: most_frequent, constant
+    onehot_handle_unknown: "ignore"       # Options: error, ignore
+
+    final_cleanup: 
+      imputer_strategy: "median"
+      perform_imputation: true
+      handle_inf: true  # Converts Infinity to NaN before final imputation
+
+  # Quality Gate: If Validation RMSE > 60,000, pipeline crashes intentionally.
+  quality_threshold: 60000.0 
+
+  # ---------------------------------------------------------------------------
+  # Model Hyperparameters
+  # Note: The 'type' field MUST match the key name.
+  # ---------------------------------------------------------------------------
+  params:
+    LGBMRegressor:
+      type: "LGBMRegressor"
+      colsample_bytree: 0.8469926038510867
+      learning_rate: 0.1323306320976562
+      max_depth: 7
+      n_estimators: 947
+      num_leaves: 44
+      objective: 'regression_l1'
+      subsample: 0.8099098641033556
+      verbose: -1
+    RandomForestRegressor:
+      type: "RandomForestRegressor"
+      n_estimators: 100
+      min_samples_leaf: 1
+      max_features: 'sqrt'
+      max_depth: null
+      criterion: 'squared_error'
+    XGBRegressor:
+      type: "XGBRegressor"
+      n_estimators: 100 
+      learning_rate: 0.1 
+      max_depth: 6             
+      subsample: 1.0           
+      colsample_bytree: 1.0    
+      gamma: 0.0               
+      objective: 'reg:squarederror'
+      
+model_registry:
+  enabled: true
+  target_alias: "staging"
+  
+prediction:
+  default_model_name: "LGBMRegressor"
+  model_filename: "{model_name}_pipeline.pkl"
+  artifacts:
+    root_dir: "artifacts"
+    model_dir: "models"
+    metrics_dir: "metrics"
+  mlflow:
+    experiment_name: "California Housing - Production"
+    registered_model_prefix: "california_housing"
