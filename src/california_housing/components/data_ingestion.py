@@ -50,6 +50,8 @@ class DataIngestion:
                 or if the source type is unsupported.
             DataValidationError: If the data is empty or violates the
                 Pandera schema (Data Contract).
+            pandera.errors.SchemaErrors: If the data violates the defined
+                types or constraints. (Bubbled up for rich artifact logging).
 
         Returns:
             pd.DataFrame: The schema-validated housing dataset.
