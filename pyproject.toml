@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [project.scripts]
-california-housing-mlops = "california_housing_mlops:main"
+chp = "california_housing.main:cli"
 
 [build-system]
 requires = ["hatchling"]
