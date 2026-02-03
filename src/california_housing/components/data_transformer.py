@@ -71,7 +71,7 @@ class FeatureNameSanitizer(BaseEstimator, TransformerMixin):
         """Apply regex sanitization to replace non-alphanumeric characters with underscores."""
         if input_features is None:
             raise ValueError("input_features must be provided to get_feature_names_out")
-        
+
         sanitized_feature = [
             re.sub(r"[^a-zA-Z0-9_]", "_", str(col)) for col in input_features
         ]
@@ -173,7 +173,9 @@ class ClusterSimilarity(BaseEstimator, TransformerMixin):
     Measure similarity to geographical clusters using RBF kernels.
 
     This transformer turns raw coordinates (Lat/Lon) into 'distance-based'
-    features that identify proximity to major economic/population hubs.
+    features. By using value-weighted K-Means during fitting, it identifies
+    proximity to major economic hotspots (wealth hubs) rather than
+    mere population density centers.
     """
 
     def __init__(
@@ -191,18 +193,40 @@ class ClusterSimilarity(BaseEstimator, TransformerMixin):
         self.kmeans_: KMeans | None = None
 
     def fit(self, X: ArrayLike, y: pd.Series | None = None) -> "ClusterSimilarity":
-        """Fit the KMeans model on the geographical coordinates."""
+        """
+        Fit the KMeans model on geographical coordinates.
+
+        Args:
+            X: Geographical coordinates (Longitude, Latitude).
+            y: Target values (House Prices) used to weight cluster centers 
+               toward high-value economic hotspots.
+        """
         X = validate_data(self, X)
+
+        if y is None:
+            logger.warning(
+                "ClusterSimilarity.fit received y=None. Falling back to unweighted KMeans."
+            )
+            sample_weight = None
+        else:
+            sample_weight = np.array(y).flatten()
+
+            if not np.all(np.isfinite(sample_weight)):
+                raise ValueError("sample_weight (y) contains NaNs or infinite values.")
+
+            if np.any(sample_weight < 0):
+                raise ValueError("sample_weight (y) cannot contain negative values.")
+
         self.kmeans_ = KMeans(
             n_clusters=self.n_clusters, random_state=self.random_state
         )
-        self.kmeans_.fit(X)
+        self.kmeans_.fit(X, sample_weight=y)
         logger.info(
-            "Fitted KMeans with %s clusters (random state = %s),",
+            "Fitted KMeans with %s clusters (random state=%s, Weighted=%s)",
             self.n_clusters,
             self.random_state,
+            "Yes" if sample_weight is not None else "No",
         )
-        # Must return self to allow chaining
         return self
 
     def transform(self, X: ArrayLike) -> np.ndarray:
