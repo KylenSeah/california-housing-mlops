@@ -88,6 +88,15 @@ class DataPreparation:
             raise ValueError("Input DataFrame is empty. Pipeline logic error.")
 
         target_col = self.globals.target_col
+
+        initial_count = len(df)
+        df = df[df[target_col] < 500001]
+        removed_count = initial_count - len(df)
+        logger.info(
+            f"Removed {removed_count} capped samples (median_house_value == 500001). "
+            f"Remaining rows: {len(df)} ({removed_count / initial_count:.1%} removed)."
+        )
+
         stratify_on = self.config.preprocessing.stratify_on_col
 
         # 1. Verification Logic
