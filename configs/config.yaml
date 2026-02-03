@@ -94,7 +94,7 @@ model_trainer:
       max_depth: 7
       n_estimators: 947
       num_leaves: 44
-      objective: 'regression_l1'
+      objective: 'regression_l2'
       subsample: 0.8099098641033556
       verbose: -1
     RandomForestRegressor:
