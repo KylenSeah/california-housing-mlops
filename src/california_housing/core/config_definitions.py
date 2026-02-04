@@ -52,6 +52,13 @@ class MlflowConfig(BaseModel):
 # =============================================================================
 
 
+class DataCleaningConfig(BaseModel):
+    """Configuration for row-level filtering and remediation."""
+
+    model_config = ConfigDict(extra="forbid")
+    target_value_cap: float | None = None
+
+
 class DataPrepPreprocessingConfig(BaseModel):
     """Configuration for initial data preparation steps like stratified splitting."""
 
@@ -255,6 +262,7 @@ class DataPreparationConfig(BaseModel):
     """Container for all data preparation configurations."""
 
     model_config = ConfigDict(extra="forbid")
+    cleaning: DataCleaningConfig
     preprocessing: DataPrepPreprocessingConfig
     split: DataSplitConfig
 

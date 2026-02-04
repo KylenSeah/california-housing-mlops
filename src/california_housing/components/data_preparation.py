@@ -64,6 +64,29 @@ class DataPreparation:
         self.config = config
         self.globals = globals_config
 
+    def _clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        target_col = self.globals.target_col
+        target_cap = self.config.cleaning.target_value_cap
+
+        if target_cap is None:
+            return df
+
+        initial_count = len(df)
+        df_cleaned = df[df[target_col] < target_cap].copy()
+
+        removed_count = initial_count - len(df_cleaned)
+
+        if removed_count > 0:
+            logger.info(
+                "Removed %s capped samples (%s == %s). Remaining rows: %s (%.1f%% removed).",
+                removed_count,
+                target_col,
+                target_cap,
+                len(df_cleaned),
+                (removed_count / initial_count) * 100,
+            )
+        return df_cleaned
+
     def split_data(self, df: pd.DataFrame) -> TrainTestSplit:
         """
         Partition the input DataFrame into training and testing sets.
@@ -86,16 +109,10 @@ class DataPreparation:
 
         if df.empty:
             raise ValueError("Input DataFrame is empty. Pipeline logic error.")
+        
+        df = self._clean_data(df)
 
         target_col = self.globals.target_col
-
-        initial_count = len(df)
-        df = df[df[target_col] < 500001]
-        removed_count = initial_count - len(df)
-        logger.info(
-            f"Removed {removed_count} capped samples (median_house_value == 500001). "
-            f"Remaining rows: {len(df)} ({removed_count / initial_count:.1%} removed)."
-        )
 
         stratify_on = self.config.preprocessing.stratify_on_col
 

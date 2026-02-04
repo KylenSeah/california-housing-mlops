@@ -22,6 +22,8 @@ data_ingestion:
   table_name: "housing"
 
 data_preparation:
+  cleaning:
+    target_value_cap: 500001
   preprocessing:
     # Stratification Logic: Ensures train/test split preserves income distribution
     new_stratify_col: "income_cat"
