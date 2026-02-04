@@ -24,10 +24,10 @@ class HousingSchema(pa.DataFrameModel):
     """
 
     longitude: Series[float] = pa.Field(
-        ge=-180, le=180, nullable=True, description="Longitude of the house location."
+        ge=-180, le=180, nullable=False, description="Longitude of the house location."
     )
     latitude: Series[float] = pa.Field(
-        ge=-90, le=90, nullable=True, description="Latitude of the house location."
+        ge=-90, le=90, nullable=False, description="Latitude of the house location."
     )
     housing_median_age: Series[float] = pa.Field(
         gt=0, nullable=True, description="Median age of houses in the block."
@@ -45,11 +45,11 @@ class HousingSchema(pa.DataFrameModel):
         gt=0, nullable=True, description="Total number of households in the block."
     )
     median_income: Series[float] = pa.Field(
-        gt=0, nullable=True, description="Median income for households in the block."
+        gt=0, nullable=False, description="Median income for households in the block."
     )
     median_house_value: Series[float] = pa.Field(
         gt=0,
-        nullable=True,
+        nullable=False,
         description="Median house value for households in the block.",
     )
     ocean_proximity: Series[str] = pa.Field(
