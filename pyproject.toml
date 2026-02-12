@@ -1,10 +1,10 @@
 [project]
 name = "california-housing-mlops"
 version = "0.1.0"
-description = "Add your description here"
+description = "End-to-end MLOps pipeline for California Housing price prediction"
 readme = "README.md"
 authors = [
-    { name = "Kyle Seah", email = "kyle.seah@example.com" }
+        { name = "Kylen Seah"}
 ]
 requires-python = ">=3.12"
 dependencies = [
@@ -17,6 +17,7 @@ dependencies = [
     "pydantic>=2.12.5",
     "pyyaml>=6.0.3",
     "scikit-learn>=1.8.0",
+    "seaborn>=0.13.2",
     "xgboost>=3.1.3",
 ]
 
@@ -29,3 +30,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/california_housing"]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.2.0",
+    "ruff>=0.15.0",
+]
