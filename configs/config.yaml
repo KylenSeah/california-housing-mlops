@@ -76,6 +76,11 @@ model_trainer:
     imputer_strategy_cat: "most_frequent" # Options: most_frequent, constant
     onehot_handle_unknown: "ignore"       # Options: error, ignore
 
+    category_merging:
+      col: "ocean_proximity"
+      mapping:
+        "ISLAND": "NEAR OCEAN"
+
     final_cleanup: 
       imputer_strategy: "median"
       perform_imputation: true

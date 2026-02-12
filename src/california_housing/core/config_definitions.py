@@ -98,6 +98,17 @@ class DataSplitConfig(BaseModel):
     )
 
 
+class CategoryMergingConfig(BaseModel):
+    """Configuration for merging categorical values."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    col: str = Field(description="The column name to apply merging to.")
+    mapping: dict[str, str] = Field(
+        description="Dictionary mapping old values to new values."
+    )
+
+
 class FinalCleanupConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -126,6 +137,10 @@ class PipelinePreprocessingConfig(BaseModel):
     imputer_strategy_num: Literal["mean", "median", "most_frequent"]
     imputer_strategy_cat: Literal["most_frequent", "constant"]
     onehot_handle_unknown: Literal["error", "ignore", "infrequent_if_exist"]
+    category_merging: CategoryMergingConfig | None = Field(
+        default=None,
+        description="Optional configuration to merge categories before encoding.",
+    )
     final_cleanup: FinalCleanupConfig = Field(default_factory=FinalCleanupConfig)
 
 

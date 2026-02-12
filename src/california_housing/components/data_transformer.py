@@ -21,7 +21,10 @@ from sklearn.pipeline import FunctionTransformer, Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.utils.validation import check_is_fitted, validate_data  # type: ignore
 
-from california_housing.core.config_definitions import PipelinePreprocessingConfig
+from california_housing.core.config_definitions import (
+    CategoryMergingConfig,
+    PipelinePreprocessingConfig,
+)
 
 # Type alias for inputs that Scikit-Learn transformers accept
 ArrayLike: TypeAlias = np.ndarray | pd.DataFrame
@@ -79,6 +82,108 @@ class FeatureNameSanitizer(BaseEstimator, TransformerMixin):
 
     def __sklearn_is_fitted__(self) -> bool:
         """Inform Scikit-Learn that this transformer is always ready."""
+        return True
+
+
+class CategoryMerger(BaseEstimator, TransformerMixin):
+    """
+    Merges specific categorical values into a single category.
+
+    Useful for handling rare categories (e.g., merging 'ISLAND' into 'NEAR OCEAN')
+    to prevent model instability or creation of sparse columns during One-Hot Encoding.
+    It prioritizes explicit column name lookup to ensure safety.
+    """
+
+    def __init__(self, col: str, mapping: dict[str, str]) -> None:
+        """
+        Initialize the merger.
+
+        Args:
+            col (str): The name of the categorical column to modify.
+            mapping (dict[str, str]): A dictionary where keys are the old values
+                                      and values are the new replacement values.
+        """
+        super().__init__()
+        self.col = col
+        self.mapping = mapping
+
+        self.col_idx_: int | None = None
+        self.feature_names_in_: np.ndarray | None = None
+
+    def fit(self, X: pd.DataFrame, y: pd.Series | None = None) -> "CategoryMerger":
+        """
+        Validate input and mark as fitted.
+
+        This is a stateless transformer (it does not learn from data), but
+        it validates that the input has the required structure.
+
+        Args:
+            X (pd.DataFrame): The training input samples.
+            y (pd.Series | None): Ignored. Exists for compatibility.
+
+        Returns:
+            self: The fitted transformer.
+        """
+        _ = validate_data(self, X, dtype=None, ensure_min_features=1)
+        return self
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """
+        Apply the value mapping to the specified column.
+
+        Args:
+            X (pd.DataFrame): Input data. Must be a DataFrame to allow name-based lookup.
+
+        Raises:
+            TypeError: If X is not a pandas DataFrame.
+            ValueError: If the target column is missing from X.
+
+        Returns:
+            pd.DataFrame: The transformed DataFrame with merged categories.
+        """
+        # 1. Enforce the Contract (Fail Fast)
+        if not isinstance(X, pd.DataFrame):
+            raise TypeError(
+                f"CategoryMerger received {type(X)} but expects pd.DataFrame. "
+                "Ensure this transformer is placed before steps that output NumPy arrays "
+                "(e.g., before SimpleImputer)."
+            )
+
+        # 2. Check Existence
+        if self.col not in X.columns:
+            raise ValueError(f"Column '{self.col}' not found in input DataFrame.")
+
+        X_out = X.copy()
+
+        # 3. Apply Mapping
+        X_out[self.col] = X_out[self.col].replace(self.mapping)
+
+        return X_out
+
+    def get_feature_names_out(
+        self, input_features: list[str] | None = None
+    ) -> list[str]:
+        """
+        Return the feature names after transformation (unchanged).
+
+        Args:
+            input_features (list[str] | None): Input feature names.
+
+        Returns:
+            list[str]: The list of output feature names.
+        """
+        if input_features is not None:
+            return input_features
+
+        if self.feature_names_in_ is not None:
+            return list(self.feature_names_in_)
+        raise ValueError(
+            f"{self.__class__.__name__} cannot determine output feature names. "
+            "Ensure the transformer was fitted on a DataFrame."
+        )
+
+    def __sklearn_is_fitted__(self) -> bool:
+        """Return True since this transformer requires no learning."""
         return True
 
 
@@ -198,7 +303,7 @@ class ClusterSimilarity(BaseEstimator, TransformerMixin):
 
         Args:
             X: Geographical coordinates (Longitude, Latitude).
-            y: Target values (House Prices) used to weight cluster centers 
+            y: Target values (House Prices) used to weight cluster centers
                toward high-value economic hotspots.
         """
         X = validate_data(self, X)
@@ -292,7 +397,9 @@ def create_preprocessing_pipeline(
         imputer_strategy=imputer_strategy_num,
     )
     cat_pipeline = _build_cat_pipeline(
-        imputer_strategy=imputer_strategy_cat, handle_unknown=onehot_handle_unknown
+        imputer_strategy=imputer_strategy_cat,
+        handle_unknown=onehot_handle_unknown,
+        merge_config=config.category_merging,
     )
     default_num_pipeline = _build_default_num_pipeline(
         imputer_strategy=imputer_strategy_num
@@ -384,9 +491,29 @@ def _build_geo_pipeline(
 def _build_cat_pipeline(
     imputer_strategy: str,
     handle_unknown: Literal["error", "ignore", "infrequent_if_exist"],
+    merge_config: CategoryMergingConfig | None,
 ) -> Pipeline:
-    """Helper to build categorical pipeline with configurable strategies."""
-    return Pipeline(
+    """
+    Helper to build categorical pipeline with optional category merging.
+
+    If merge_config is provided, the CategoryMerger is inserted as the FIRST step.
+    This ensures that rare categories are mapped (e.g., ISLAND -> NEAR OCEAN)
+    BEFORE the OneHotEncoder sees them.
+    """
+
+    steps = []
+
+    # 1. Optional: Merge Categories (MUST happen before imputation/encoding)
+    if merge_config is not None:
+        steps.append(
+            (
+                "category_merger",
+                CategoryMerger(col=merge_config.col, mapping=merge_config.mapping),
+            )
+        )
+
+    # 2. Imputation & Encoding
+    steps.extend(
         [
             ("imputer", SimpleImputer(strategy=imputer_strategy)),
             (
@@ -395,6 +522,7 @@ def _build_cat_pipeline(
             ),
         ]
     )
+    return Pipeline(steps=steps)
 
 
 def _build_default_num_pipeline(imputer_strategy: str) -> Pipeline:
