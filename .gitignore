@@ -34,13 +34,13 @@ MANIFEST
 # (Data should be fetched via scripts/DVC, not stored in Git)
 # ===================================================================
 data/*
-raw_data/*
-processed_data/*
+raw/*
+processed/*
 
 # Allow the folders themselves to be tracked via .gitkeep
 !data/.gitkeep
-!raw_data/.gitkeep
-!processed_data/.gitkeep
+!raw/.gitkeep
+!processed/.gitkeep
 
 # Safety net for loose data files
 *.csv
@@ -53,6 +53,10 @@ processed_data/*
 *.db
 *.sqlite
 *.sqlite3
+
+# Allow the samples directory and the specific verification file
+!data/samples/
+!data/samples/sample_input.csv
 
 # ===================================================================
 # 3. Environments & Secrets (CRITICAL SECURITY)
