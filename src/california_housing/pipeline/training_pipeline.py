@@ -20,7 +20,9 @@ from pathlib import Path
 from typing import List
 
 import mlflow
+from mlflow import lightgbm as mlflow_lightgbm
 from mlflow import sklearn as mlflow_sklearn
+from mlflow import xgboost as mlflow_xgboost
 from mlflow.models.signature import infer_signature
 from pandera.errors import SchemaErrors
 from pydantic import ValidationError
@@ -85,7 +87,8 @@ class TrainingPipeline:
                 to apply to the registered model version. Defaults to None.
         """
         self.model_name = model_name
-        self.alias = alias  # add this
+        self.alias = alias
+        self.telemetry_config = config_manager.get_telemetry_config()
         self.config_manager = config_manager
 
         self.ingestion = data_ingestion
@@ -98,9 +101,11 @@ class TrainingPipeline:
         """
         Executes the end-to-end training workflow.
 
-        This method initializes an MLflow run and executes the pipeline steps in order.
-        It handles all high-level exceptions, tagging the MLflow run with the specific
-        failure category (Infrastructure, Data Quality, Model, etc.) to aid debugging.
+        This method initializes an MLflow run, configures telemetry (including autolog
+        for automatic logging of training errors/metrics like MSE to enable generalization
+        gap analysis), and executes the pipeline steps in order. It handles all high-level
+        exceptions, tagging the MLflow run with the specific failure category (Infrastructure,
+        Data Quality, Model, etc.) to aid debugging.
 
         Raises:
             IngestionError: If the data source cannot be accessed.
@@ -117,6 +122,8 @@ class TrainingPipeline:
         logger.info("--- Starting training pipeline for model: %s ---", self.model_name)
         current_step = "initialization"
         temp_files: List[Path] = []
+
+        self._setup_telemetry()
 
         mlflow_config = self.config_manager.get_mlflow_config()
         mlflow.set_experiment(mlflow_config.experiment_name)
@@ -267,6 +274,50 @@ class TrainingPipeline:
 
             finally:
                 self._cleanup_temp_files(temp_files)
+
+    # --- Pipeline Lifecycle Helpers ---
+
+    def _setup_telemetry(self) -> None:
+        """Configures MLflow autolog based on telemetry config."""
+        if not self.telemetry_config.autolog_enabled:
+            logger.info("Autologging disabled via config.")
+            return
+
+        try:
+            mlflow_sklearn.autolog(
+                log_models=self.telemetry_config.autolog_log_models,
+                silent=self.telemetry_config.autolog_silent,
+            )
+            mlflow_lightgbm.autolog(
+                log_models=self.telemetry_config.autolog_log_models,
+                silent=self.telemetry_config.autolog_silent,
+            )
+            mlflow_xgboost.autolog(
+                log_models=self.telemetry_config.autolog_log_models,
+                silent=self.telemetry_config.autolog_silent,
+            )
+            logger.info("MLflow autologging configured.")
+        except Exception as e:
+            logger.warning(f"Telemetry setup failed (continuing without autolog): {e}")
+
+    def _cleanup_temp_files(self, temp_files: List[Path]) -> None:
+        """
+        Deletes temporary files created during the pipeline run.
+
+        Args:
+            temp_files (List[Path]): A list of file paths to remove.
+        """
+        if not temp_files:
+            return
+
+        logger.info("Cleaning up %s temporary files...", len(temp_files))
+        for temp_file in temp_files:
+            try:
+                if temp_file.exists():
+                    temp_file.unlink()
+                    logger.debug("Deleted temp file: %s", temp_file)
+            except Exception as cleanup_e:
+                logger.warning("Failed to delete %s: %s", temp_file, cleanup_e)
 
     # --- Specialized Error Handlers ---
 
@@ -429,22 +480,3 @@ class TrainingPipeline:
             mlflow.set_tag("error_type", type(e).__name__)
             mlflow.set_tag("failure_step", step)
             mlflow.log_text(traceback.format_exc(), "crash_dump.txt")
-
-    def _cleanup_temp_files(self, temp_files: List[Path]) -> None:
-        """
-        Deletes temporary files created during the pipeline run.
-
-        Args:
-            temp_files (List[Path]): A list of file paths to remove.
-        """
-        if not temp_files:
-            return
-
-        logger.info("Cleaning up %s temporary files...", len(temp_files))
-        for temp_file in temp_files:
-            try:
-                if temp_file.exists():
-                    temp_file.unlink()
-                    logger.debug("Deleted temp file: %s", temp_file)
-            except Exception as cleanup_e:
-                logger.warning("Failed to delete %s: %s", temp_file, cleanup_e)

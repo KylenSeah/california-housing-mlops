@@ -47,6 +47,20 @@ class MlflowConfig(BaseModel):
     )
 
 
+class TelemetryConfig(BaseModel):
+    """Configuration for automated pipeline observability and logging behavior."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    autolog_enabled: bool = Field(
+        default=True, description="Enable MLflow autologging."
+    )
+    autolog_log_models: bool = Field(
+        default=False, description="Log full models (heavy)."
+    )
+    autolog_silent: bool = Field(default=True, description="Suppress autolog output.")
+
+
 # =============================================================================
 # 2. HELPER & STRATEGY SCHEMAS (Branches)
 # =============================================================================
@@ -245,6 +259,7 @@ class GlobalsConfig(BaseModel):
 
     artifacts: ArtifactsConfig
     mlflow: MlflowConfig
+    telemetry: TelemetryConfig 
 
 
 class DataIngestionConfig(BaseModel):

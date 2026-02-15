@@ -15,6 +15,10 @@ globals:
   mlflow:
     experiment_name: "California Housing - test"
     registered_model_prefix: "california_housing"
+  telemetry:
+    autolog_enabled: true
+    autolog_log_models: false
+    autolog_silent: true
 
 data_ingestion:
   type: "sqlite"

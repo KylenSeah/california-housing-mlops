@@ -24,6 +24,7 @@ from california_housing.core.config_definitions import (
     ModelRegistryConfig,
     ModelTrainerConfig,
     PredictionConfig,
+    TelemetryConfig,
     TrainerEvaluationConfig,
 )
 from california_housing.core.exceptions import ConfigurationError
@@ -157,6 +158,9 @@ class ConfigurationManager:
 
     def get_artifacts_config(self) -> ArtifactsConfig:
         return self.config.globals.artifacts
+
+    def get_telemetry_config(self) -> TelemetryConfig:
+        return self.config.globals.telemetry
 
     def get_globals_config(self) -> GlobalsConfig:
         return self.config.globals
