@@ -48,17 +48,21 @@ class MlflowConfig(BaseModel):
 
 
 class TelemetryConfig(BaseModel):
-    """Configuration for automated pipeline observability and logging behavior."""
+    """Configuration for MLflow Autologging behaviors."""
 
     model_config = ConfigDict(extra="forbid")
 
     autolog_enabled: bool = Field(
-        default=True, description="Enable MLflow autologging."
+        default=True, description="Enable MLflow autologging for Sklearn/XGB/LGBM."
     )
     autolog_log_models: bool = Field(
-        default=False, description="Log full models (heavy)."
+        default=False,
+        description="If True, autologging will save model artifacts. "
+        "False is recommended since Pipeline manually saves models.",
     )
-    autolog_silent: bool = Field(default=True, description="Suppress autolog output.")
+    autolog_silent: bool = Field(
+        default=True, description="Suppress autologging output to stdout."
+    )
 
 
 # =============================================================================
@@ -259,7 +263,7 @@ class GlobalsConfig(BaseModel):
 
     artifacts: ArtifactsConfig
     mlflow: MlflowConfig
-    telemetry: TelemetryConfig 
+    telemetry: TelemetryConfig = Field(default_factory=TelemetryConfig)
 
 
 class DataIngestionConfig(BaseModel):
