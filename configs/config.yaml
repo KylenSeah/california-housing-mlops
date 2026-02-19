@@ -100,37 +100,43 @@ model_trainer:
   params:
     LGBMRegressor:
       type: "LGBMRegressor"
-      colsample_bytree: 0.8469926038510867
-      learning_rate: 0.1323306320976562
-      max_depth: 7
-      n_estimators: 947
-      num_leaves: 44
-      objective: 'regression_l2'
-      subsample: 0.8099098641033556
+      colsample_bytree: 0.7433862914177091
+      learning_rate: 0.013057771348997228
+      max_depth: 11
+      min_child_samples: 18
+      n_estimators: 1000
+      num_leaves: 91
+      objective: "regression"
+      reg_alpha: 0.4494506741382034
+      reg_lambda: 0.09541011649041131
+      subsample: 0.7483273008793065
       verbose: -1
     RandomForestRegressor:
       type: "RandomForestRegressor"
-      n_estimators: 100
+      bootstrap: True
+      max_depth: 40
+      max_features: "sqrt"
       min_samples_leaf: 1
-      max_features: 'sqrt'
-      max_depth: null
-      criterion: 'squared_error'
+      min_samples_split: 4
+      n_estimators: 200
     XGBRegressor:
       type: "XGBRegressor"
-      n_estimators: 100 
-      learning_rate: 0.1 
-      max_depth: 6             
-      subsample: 1.0           
-      colsample_bytree: 1.0    
-      gamma: 0.0               
-      objective: 'reg:squarederror'
+      colsample_bytree: 0.7693605922825478
+      gamma: 0.19744075908778486
+      learning_rate: 0.019655684599424853
+      max_depth: 9
+      min_child_weight: 3
+      n_estimators: 1188
+      objective: "reg:squarederror"
+      subsample: 0.8827429375390468
+      verbosity: 0 
       
 model_registry:
   enabled: true
   target_alias: "staging"
   
 prediction:
-  default_model_name: "LGBMRegressor"
+  default_model_name: "XGBRegressor"
   model_filename: "{model_name}_pipeline.pkl"
   artifacts:
     root_dir: "artifacts"

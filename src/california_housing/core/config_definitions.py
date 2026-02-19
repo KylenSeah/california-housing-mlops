@@ -198,9 +198,12 @@ class LGBMParams(BaseModel):
     colsample_bytree: float
     learning_rate: float
     max_depth: int
+    min_child_samples: int
     n_estimators: int
     num_leaves: int
     objective: str
+    reg_alpha: float
+    reg_lambda: float
     subsample: float
     verbose: int = -1
 
@@ -210,11 +213,12 @@ class RandomForestParams(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
     type: Literal["RandomForestRegressor"]
+    bootstrap: bool
     n_estimators: int
     min_samples_leaf: int
+    min_samples_split: int
     max_features: str | float | int
     max_depth: int | None
-    criterion: str
 
 
 class XGBoostParams(BaseModel):
@@ -226,9 +230,11 @@ class XGBoostParams(BaseModel):
     gamma: float
     learning_rate: float
     max_depth: int
+    min_child_weight: int
     n_estimators: int
     objective: str
     subsample: float
+    verbosity: int = 0
 
 
 # --- Validation Strategy Schemas ---
