@@ -452,7 +452,7 @@ def create_preprocessing_pipeline(
     logger.info(
         "Preprocessing pipeline built. Final cleanup: Inf=%s, Impute=%s (strategy=%s)",
         cleanup.handle_inf,
-        cleanup.perform_imputation,  # Renamed from 'enabled'
+        cleanup.perform_imputation,
         cleanup.imputer_strategy,
     )
     return preprocessor

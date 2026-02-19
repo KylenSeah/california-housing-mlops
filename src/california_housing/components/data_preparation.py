@@ -64,29 +64,6 @@ class DataPreparation:
         self.config = config
         self.globals = globals_config
 
-    def _clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        target_col = self.globals.target_col
-        target_cap = self.config.cleaning.target_value_cap
-
-        if target_cap is None:
-            return df
-
-        initial_count = len(df)
-        df_cleaned = df[df[target_col] < target_cap].copy()
-
-        removed_count = initial_count - len(df_cleaned)
-
-        if removed_count > 0:
-            logger.info(
-                "Removed %s capped samples (%s == %s). Remaining rows: %s (%.1f%% removed).",
-                removed_count,
-                target_col,
-                target_cap,
-                len(df_cleaned),
-                (removed_count / initial_count) * 100,
-            )
-        return df_cleaned
-
     def split_data(self, df: pd.DataFrame) -> TrainTestSplit:
         """
         Partition the input DataFrame into training and testing sets.
@@ -109,7 +86,7 @@ class DataPreparation:
 
         if df.empty:
             raise ValueError("Input DataFrame is empty. Pipeline logic error.")
-        
+
         df = self._clean_data(df)
 
         target_col = self.globals.target_col
@@ -195,3 +172,26 @@ class DataPreparation:
             X_test=X_test,
             y_test=y_test,
         )
+
+    def _clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        target_col = self.globals.target_col
+        target_cap = self.config.cleaning.target_value_cap
+
+        if target_cap is None:
+            return df
+
+        initial_count = len(df)
+        df_cleaned = df[df[target_col] < target_cap].copy()
+
+        removed_count = initial_count - len(df_cleaned)
+
+        if removed_count > 0:
+            logger.info(
+                "Removed %s capped samples (%s == %s). Remaining rows: %s (%.1f%% removed).",
+                removed_count,
+                target_col,
+                target_cap,
+                len(df_cleaned),
+                (removed_count / initial_count) * 100,
+            )
+        return df_cleaned

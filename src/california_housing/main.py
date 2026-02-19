@@ -167,7 +167,7 @@ def train(
                 model_trainer=model_trainer,
                 model_evaluator=model_evaluator,
                 model_registry=model_registry,
-                alias=alias,  # add this
+                alias=alias,
             )
 
             # ---------------------------------------------------------

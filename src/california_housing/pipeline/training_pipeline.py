@@ -227,7 +227,7 @@ class TrainingPipeline:
                     mlflow.set_tag("current_step", current_step)
                     self.registry.register_latest_version(
                         run_id=run_id,
-                        alias=self.alias,  # add this
+                        alias=self.alias,
                     )
 
                 mlflow.set_tag("pipeline_status", "completed")

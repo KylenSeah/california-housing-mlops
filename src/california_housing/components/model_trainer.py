@@ -124,7 +124,7 @@ class ModelTrainer:
             )
 
             # 3. Quality Gate
-            primary_metric = self.config.evaluation.metrics[0]  # e.g. "rmse"
+            primary_metric = self.config.evaluation.metrics[0]
             metric_key = self._get_metric_key(primary_metric, METRIC_PREFIX_MEAN)
 
             current_score = validation_metrics[metric_key]
